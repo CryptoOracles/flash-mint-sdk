@@ -46,8 +46,8 @@ export class ComponentsQuoteProvider {
     const slippagePercentage = slippage / 100
 
     const quotePromises: Promise<any>[] = []
-
-    components.forEach((component, index) => {
+    let timeout = 500; 
+    for(const [index, component] of components.entries()) {
       const buyAmount = positions[index]
       const sellAmount = positions[index]
       const buyToken = isMinting ? component : outputTokenAddress
@@ -71,10 +71,13 @@ export class ComponentsQuoteProvider {
               sellAmount: sellAmount.toString(),
               slippagePercentage,
             }
-        const quotePromise = zeroExApi.getSwapQuote(params, chainId ?? 1)
-        quotePromises.push(quotePromise)
+        const quotePromise = new Promise((resolve) => {
+         setTimeout( () => resolve(zeroExApi.getSwapQuote(params, chainId ?? 1)), timeout)
+        })
+        quotePromises.push(quotePromise);
+        timeout+=1000;
       }
-    })
+    }
 
     const results = await Promise.all(quotePromises)
     const componentQuotes = results.map((result) => result.data)

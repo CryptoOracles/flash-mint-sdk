@@ -1,4 +1,6 @@
-import axios, { AxiosRequestHeaders } from 'axios'
+import axios, { AxiosInstance, AxiosRequestHeaders } from 'axios'
+import axiosRetry from 'axios-retry';
+
 
 import { ChainId } from '../constants/chains'
 
@@ -19,6 +21,7 @@ export type ZeroExApiSwapResponse = {
 }
 
 export class ZeroExApi {
+
   /**
    * @param baseUrl              The base url (default: https://api.0x.org, watch rate limits)
    * @param affiliateAddress    (Optional) Affiliate address
@@ -53,21 +56,33 @@ export class ZeroExApi {
    * @param params          Parameters for the swap request
    * @param chainId         ID of the network
    */
-  public async getSwapQuote(params: any, chainId: number): Promise<any | null> {
+  public async getSwapQuote(params: any, chainId: number): Promise<ZeroExApiSwapResponse | null> {
     const path = this.swapPathOverride ?? '/swap/v1/quote'
     const query = new URLSearchParams(params).toString()
     let config = {}
     if (this.headersOverride) {
       config = {
-        headers: this.headersOverride,
+        headers: this.headersOverride
       }
     }
     const url = this.buildUrl(path, query, chainId)
+    axiosRetry(axios, {
+      retries: 3, // number of retries
+      retryDelay: (retryCount: number) => {
+          console.log(`retry attempt: ${retryCount}`);
+          return retryCount * 1000; // time interval between retries
+      },
+      retryCondition: (error: any) => {
+          // if retry condition is not specified, by default idempotent requests are retried
+          return error.response.status === 429;
+      },
+    });
     try {
       const response = await axios.get(url, config)
       const res: ZeroExApiSwapResponse = response.data
       return res
     } catch (err: any) {
+      console.log(err);
       return null
     }
   }

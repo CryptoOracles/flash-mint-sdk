@@ -58,8 +58,8 @@ const index0xApiBaseUrl = process.env.INDEX_0X_API
 export const ZeroExApiSwapQuote = new ZeroExApi(
   index0xApiBaseUrl,
   '',
-  { 'X-INDEXCOOP-API-KEY': process.env.INDEX_0X_API_KEY! },
-  '/mainnet/swap/v1/quote'
+  {},
+  '/swap/v1/quote'
 )
 
 // Balance
